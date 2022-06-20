@@ -1,0 +1,266 @@
+# Méthodes et interfaces
+Cette leçon couvre les méthodes et les interfaces, les constructions qui définissent des objets et leur comportement.
+Summary: Go ne dispose pas des classes. Cependant, vous pouvez définir des méthodes sur les types.
+
+Les auteurs de Go
+https://golang.org
+
+## Méthodes
+
+Go ne dispose pas des classes.
+Cependant, vous pouvez définir des méthodes sur les types.
+
+Une méthode est une fonction avec un argument de _récepteur_ spécial.
+
+Le récepteur apparaît dans sa propre liste d'arguments entre le mot clé `func` et
+le nom de la méthode.
+
+Dans cet exemple, la méthode `Abs` possède un récepteur de type `Vertex` nommé `v`.
+
+.play methods/methods.go
+
+## Les méthodes sont des fonctions
+
+Rappelez-vous : une méthode est juste une fonction avec un argument de récepteur.
+
+Voici `Abs` écrite comme une fonction régulière sans changement de fonctionnalité.
+
+.play methods/methods-funcs.go
+
+## Méthodes sur types de base
+
+Vous pouvez déclarer une méthode sur les types non-struct, aussi.
+
+Dans cet exemple, nous voyons un type numérique `MyFloat` avec une méthode `Abs`.
+
+Vous ne pouvez que déclarer une méthode avec un récepteur dont le type est défini dans le même
+package que la méthode (pas forcément dans le même fichier).
+Vous ne pouvez pas déclarer une méthode avec un récepteur dont le type est défini dans un autre
+package (ce-qui comprend les types intégrés comme `int`).
+
+.play methods/methods-continued.go
+.play methods/methods_type.go
+
+## Récepteurs de Pointeur
+
+Vous pouvez déclarer des méthodes avec des récepteurs de pointeur.
+
+Cela signifie que le type de récepteur a la syntaxe littérale `*T` pour un certain type `T`.
+
+Par exemple, la méthode `Scale` est ici définie sur `*Vertex`.
+
+Les méthodes avec récepteurs de pointeur peuvent modifier la valeur sur laquelle le récepteur
+pointe (comme `Scale` le fait ici).
+Comme les méthodes ont souvent besoin de modifier leur récepteur, les récepteurs de pointeur sont plus
+communs que les récepteurs de valeur.
+
+- Essayons de retirer le `*` de la déclaration de la fonction `Scale` sur la ligne 16
+  et observez comment le comportement du programme change.
+  Avec un récepteur de valeur, la méthode `Scale` fonctionne sur une copie de la valeur
+  original `Vertex`
+- Essayons d'utiliser un pointeur lors de la création du Vertex dans main ligne 22.
+
+> Le passage par pointeur ou valeur se fait automatiquement au moment de l'appel de la méthode
+  et non par rapport au type initial.
+
+> Il est possible d'appeler une méthode sur un pointeur de structure null, dans ce cas la méthode
+  sera simplement appelée avec v null.
+
+.play methods/methods-pointers.go
+
+## Struct composition
+
+Il est possible de composer un struct avec un ou plusieurs structs.
+Ce dernier bénéficie des champs et des méthodes du struct incorporé.
+
+Toutefois il n'y a ni héritage ni surcharge.
+Les méthodes du struct incorporés sont conservées même si redéfinies par le struct englobant.
+
+.play methods/composition.go
+.play methods/composition_over.go
+.play methods/composition_over_ex.go
+
+## Interfaces
+
+Un _type d'interface_ est défini comme un ensemble de signatures de méthode.
+
+Une valeur de type d'interface peut contenir n'importe quelle valeur qui implémente ces méthodes.
+
+> Comme les structures, les interfaces peuvent être composées d'autres interfaces
+
+.play methods/interfaces.go
+.play methods/interfaces_ex.go
+
+Un type implémente une interface en mettant en œuvre ses méthodes.
+Il n'y a aucune déclaration explicite d'intention, pas de mot-clé « implements ».
+
+Les interfaces implicites découplent la définition d'une interface de son
+implementation qui pourraient alors apparaître dans n'importe quel package sans déclaration préalable.
+
+## L'interface vide
+
+Le type d'interface qui ne spécifie aucune méthode est connu comme _l'interface vide_ :
+
+	interface{}
+
+Une interface vide peut contenir des valeurs de tout type.
+(Chaque type n'implémente aucune méthode.)
+
+Les interfaces vides sont utilisés par du code qui gère les valeurs de type inconnu.
+Par exemple, `fmt.Print` prend un nombre d'arguments de type `interface{}`.
+
+.play methods/empty-interface.go
+
+## Assertions de type
+
+Une _assertion de type_ donne accès à la valeur sous-jacente concrète d'une valeur d'interface.
+
+	t := i.(T)
+
+Cette instruction affirme que la valeur d'interface `i` contient le type concret `T`
+et assigne la valeur sous-jacent `T` à la variable `t`.
+
+Si `i` ne détient pas `T`, la déclaration va déclencher une panique.
+
+Pour _tester_ si une valeur d'interface détient un type spécifique,
+une assertion de type peut retourner deux valeurs: la valeur sous-jacente
+et une valeur booléenne qui indique si l'affirmation réussi.
+
+	t, ok := i.(T)
+
+Si `i` détient `T`, alors `t` sera la valeur sous-jacente et `ok` sera vrai.
+
+Si non, `ok` sera faux et `t` sera la valeur zéro de type `T`,
+et aucune panique ne se produira.
+
+Notez la similitude entre cette syntaxe et celle de la lecture d'une map.
+
+.play methods/type-assertions.go
+
+## Commutateurs de type
+
+Un _commutateur de type_ est une construction qui permet plusieurs assertions de type en série.
+
+Un commutateur de type est comme une instruction switch régulière, mais les cas d'un commutateur de type
+spécifie les types (pas les valeurs), et ces valeurs sont comparées
+au type de la valeur maintenue par la valeur d'interface donnée.
+
+	switch v := i.(type) {
+	case T:
+		// here v has type T
+	case S:
+		// here v has type S
+	default:
+		// no match; here v has the same type as i
+	}
+
+La déclaration dans un commutateur de type a la même syntaxe qu'une affirmation de type `i.(T)`,
+mais le type spécifique de `T` est remplacé par le mot-clé `type`.
+
+Cette instruction switch test si la valeur d'interface `i`
+détient une valeur de type `T` ou `S`.
+Dans chacun des cas de `T` et `S`, la variable `v` sera de type
+`T` ou `S` respectivement, et détiendra la valeur détenue par `i`.
+Dans le cas par défaut (où il n'y a pas de correspondance), la variable `v`
+ est de même type d'interface et de valeur que `i`.
+
+.play methods/type-switches.go
+
+
+## Stringers
+
+L'une des interfaces les plus répandues est [`Stringer`](//golang.org/pkg/fmt/#Stringer) définie par le package [`fmt`](//golang.org/pkg/fmt/).
+
+	type Stringer interface {
+		String() string
+	}
+
+Un `Stringer` est un type qui peut se décrire comme une chaîne. Le package `fmt`
+(et bien d'autres) recherche cette interface pour imprimer les valeurs.
+
+.play methods/stringer.go
+
+## Exercice : Stringer
+
+Faire que le type `IPAddr` implémente `fmt.Stringer` pour imprimer l'adresse en
+un quad en pointillés.
+
+Par exemple, `IPAddr{1, 2, 3, 4}` devrait s'imprimer comme `"1.2.3.4"`.
+
+.play methods/exercise-stringer.go
+
+*Exercice : ensuite créer une interface et plusieurs objets différents qui contiennent une IP*
+
+## Erreurs
+
+les programmes Go expriment l'état d'erreur avec les valeurs de `error`.
+
+Le type de `error` est une interface intégrée similaire à `fmt.Stringer` :
+
+	type error interface {
+		Error() string
+	}
+
+(Comme `fmt.Stringer`, le package `fmt` recherche l'interface `error` lors
+de l'impression des valeurs.)
+
+Les fonctions renvoient souvent une valeur `error`, et le code appelant doit gérer les erreurs
+en testant si l'erreur est égale à `nil`.
+
+	i, err := strconv.Atoi("42")
+	if err != nil {
+		fmt.Printf("ne peut pas convertir un nombre : %v\n", err)
+		return
+	}
+	fmt.Println("entier converti :", i)
+
+Une `error` nulle dénote le succès ; une `error` non-nulle dénote l'échec.
+
+.play methods/errors.go
+
+## Exercice : erreurs
+
+Modifier la fonction Div pour retourner une erreur en cas de division par zéro.
+
+.play methods/exercise-errors.go
+
+## Lecteurs (Readers)
+
+Le package `io` spécifie l'interface `io.Reader`,
+qui représente la fin de lecture d'un flux de données.
+
+La bibliothèque standard de Go contient [plusieurs implémentations](https://golang.org/search?q=Read#Global) de cette interface, notamment les fichiers, les connexions réseau, les compresseurs, les chiffrements, et d'autres.
+
+L'interface `io.Reader` a une méthode `Read` :
+
+	func (T) Read(b []byte) (n int, err error)
+
+`Read` remplit la tranche d'octets donnée avec des données et renvoie le nombre d'octets
+peuplé et une valeur d'erreur. Il renvoie une erreur `io.EOF` lorsque le flux
+se termine.
+
+L'exemple de code crée un
+[`strings.Reader`](//golang.org/pkg/strings/#Reader)
+et consomme sa sortie 8 octets à la fois.
+
+.play methods/reader.go
+
+## Exercice : lecteurs
+
+Mettre en place un type `Reader` qui émet un flux de x caractères donné en paramètre.
+
+.play methods/exercise-reader.go
+
+## Exercice : upperReader
+
+Un modèle commun est un [io.Reader](https://golang.org/pkg/io/#Reader) qui enveloppe une autre `io.Reader`, modifiant le flux d'une certaine façon.
+
+Par exemple, la fonction [gzip.NewReader](https://golang.org/pkg/compress/gzip/#NewReader) prend un `io.Reader` (un flux de données compressées) et renvoie un `*gzip.Reader` qui met également en œuvre `io.Reader` (un flux de données décompressées).
+
+Mettre en place un `upperReader` qui implémente `io.Reader` et lit un `io.Reader`, modifiant le flux en majuscules.
+
+Faites un `io.Reader` en mettant en œuvre sa méthode`Read`.
+
+.play methods/exercise-upper-reader.go
+
+

@@ -1,0 +1,42 @@
+# Templates
+
+## Textes ou HTML
+
+Deux packages permettent de gérer les templates `text/template` et `html/template`. 
+Ce dernier a un fonctionnement identique mais permet d'effectuer les échapements
+automatiquement en fonction du contexte.
+
+Les templates doivent être parsés avant d'être utilisés pour vérifier leur syntaxe.
+
+Ils peuvent provenir d'une chaine de caractère ou de fichiers.
+
+Dans le cas d'une chaine il faut indiquer un nom, dans le cas de fichiers le nom
+par défaut sera le nom du fichier. Plusieurs fichiers peuvent se retrouver dans le
+même template et sont accessibles par leur nom.
+
+```
+t := template.New("").ParseGlob("templates/*.html")
+t.ExecuteTemplate(w, "fichier.html", map[string]interface{}{
+    "Key":"Valeur",
+})
+```
+
+.play templates/template.go
+
+
+.play templates/template_esc.go
+
+[doc](https://golang.org/pkg/html/template/)
+
+## Embedding
+
+Le package `embed` permet d'inclure des fichiers statics dans le binaire. Lors de `go build`
+
+Les fichiers sont obligatoirement dans le répertoire ou les sous-répertoires du fichier.
+
+Soit sous forme de `[]byte` ou `string` soit sous forme de système de fichier `io/fs`.
+
+Dans la lib standard une function permet de les parser pour les templates `template.ParseFS`, 
+une autre permet de servir des fichiers statiques `http.FileServer(http.FS(fs))`
+
+.play templates/embed.go

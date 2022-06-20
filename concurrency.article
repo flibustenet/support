@@ -1,0 +1,145 @@
+# Concomitance
+Go offre des primitives de simultanéité dans le cadre du langage de base. Cette leçon les présentent et donne quelques exemples sur la façon dont elles peuvent être utilisées.
+Summary: Une _goroutine_ est un processus léger géré par le « Go runtime ».
+
+Les auteurs de Go
+https://golang.org
+
+## Goroutines
+
+Une _goroutine_ est un processus léger géré par le « Go runtime ».
+
+	go f(x, y, z)
+
+démarre une nouvelle goroutine exécutant
+
+	f(x, y, z)
+
+L'évaluation de `f`, `x`, `y` et `z` arrive dans la goroutine actuelle et l'exécution de `f` arrive dans la nouvelle goroutine.
+
+Les goroutines s'exécutent dans le même espace d'adressage, de sorte que les accès à la mémoire partagée doivent être synchronisés. Le package [`sync`](https://golang.org/pkg/sync/) fournit des primitives utiles, bien que vous n'aurez pas beaucoup besoin d'y Accéder car Go a d'autres primitives. (Voir la diapositive suivante.)
+
+Attention, toutes les goroutines s'arrêtent lors que la première s'arrête.
+
+.play concurrency/goroutines.go
+
+## Canaux (Channels)
+
+Les canaux sont des conduits typés à travers lesquels vous pouvez envoyer et recevoir des valeurs avec l'opérateur de canal, `<-`.
+
+	ch <- v    // Envoyer v sur le canal ch.
+	v := <-ch  // Recevoir de ch, et
+	           // attribuer une valeur à v.
+
+(Le flux de données va dans le sens de la flèche.)
+
+Comme les maps et les slices, les canaux doivent être créés avant l'utilisation :
+
+	ch := make(chan int)
+
+Par défaut, l'envoi et la réception bloque jusqu'à ce que l'autre côté soit prêt. Cela permet de synchroniser les goroutines sans verrous explicites ou variables de condition.
+
+L'exemple de code additionne les nombres dans un slice, répartissant le travail entre deux goroutines.
+Une fois que les deux goroutines ont terminé leur calcul, il calcule le résultat final.
+
+.play concurrency/channels.go
+
+## Les canaux à mémoire tampon
+
+Les canaux peuvent être _buffered_. Fournir la longueur du tampon comme le second argument de `make` pour initialiser un canal à mémoire tampon :
+
+	ch := make(chan int, 100)
+
+L'envoi à un canal à mémoire tampon bloque uniquement lorsque le tampon est plein. La réception bloque lorsque le tampon est vide.
+
+.play concurrency/buffered-channels.go
+
+## Gamme (Range) et Fermeture (Close)
+
+Un expéditeur peut `close` un canal pour indiquer qu'il n'y a plus de valeurs qui seront envoyés. Les récepteurs peuvent vérifier si un canal a été fermée par l'attribution d'un deuxième paramètre à l'expression de réception : après
+
+	v, ok := <-ch
+
+`ok` est `false` si il n'y a plus de valeurs à recevoir et le canal est fermé.
+
+La boucle `for i := range c` reçoit les valeurs du canal à plusieurs reprises jusqu'à ce qu'il soit fermé.
+
+**Note :** seul l'expéditeur doit fermer un canal, jamais le récepteur. L'envoi sur un canal fermé provoque une panique.
+
+**Autre note :** les canaux ne sont pas comme les fichiers, vous n'avez généralement pas besoin de les fermer. La fermeture n'est nécessaire que lorsque le récepteur doit être informé qu'il n'y a plus de valeurs à venir, comme mettre fin à la boucle d'un `range`.
+Il est cependant utile d'utiliser `close` lorsque plusieurs goroutines lisent un même canal (`context.Context` par exemple).
+
+.play concurrency/range-and-close.go
+
+## Sélectionner (Select)
+
+La déclaration `select` permet à une goroutine d'attendre sur plusieurs canaux simultanées.
+
+Un `select` bloque jusqu'à ce que l'un de ses cas puisse s'exécuter, puis il l'exécute. Il en choisit un systématiquement au hasard si plusieurs sont prêts.
+
+.play concurrency/select.go
+
+## La sélection par défaut
+
+Le cas `default` dans un `select` est exécuté si aucun autre cas n'est prêt.
+
+Utiliser un cas `default` pour essayer d'envoyer ou recevoir sans blocage :
+
+	select {
+	case i := <-c:
+		// utiliser i
+	default:
+		// recevoir de c bloquerait
+	}
+
+.play concurrency/default-selection.go
+
+## sync.Mutex
+
+Nous avons vu comment les canaux sont parfaits pour la communication entre les goroutines.
+
+Mais que faire si on n'a pas besoin de communication ? Que faire si nous voulons juste nous assurer que
+un goroutine peut accéder à une variable à la fois pour éviter les conflits?
+
+Ce concept est appelé _exclusion mutuelle_, et le nom classique pour la structure de données qui fournit cela est _mutex_.
+
+La bibliothèque standard de Go offre l'exclusion mutuelle avec
+[`sync.Mutex`](https://golang.org/pkg/sync/#Mutex) et ses deux méthodes:
+
+  - `Lock`
+  - `Unlock`
+
+Nous pouvons définir un bloc de code à exécuter en exclusion mutuelle en l'entourant
+avec un appel à `Unlock` et `Lock` comme indiqué sur la méthode `Inc`.
+
+Nous pouvons également utiliser `defer` pour garantir que le mutex sera débloqué comme dans la méthode `value`.
+
+.play concurrency/mutex-counter.go
+.play concurrency/mutex-counter2.go
+
+> Voir également sync.RWMutex
+
+## sync.WaitGroup
+
+Le package sync propose d'autres outils comme par exemple `sync.WaitGroup` qui permet
+de décompter les tâches à effectuer et d'attendre que toutes les tâches sont réalisées.
+
+.play concurrency/waitgroup.go
+
+<!--
+Autre package https://pkg.go.dev/golang.org/x/sync
+-->
+
+## Patterns
+
+* [Go concurrency pattern](https://www.youtube.com/watch?v=f6kdp27TYZs)
+* [Slides](https://talks.golang.org/2012/concurrency.slide)
+* [GitHub concurrency pattern](https://github.com/lotusirous/go-concurrency-patterns)
+
+.play concurrency/timeout.go
+.play concurrency/timeout_ex.go
+
+.play concurrency/chan_back.go
+.play concurrency/chan_back_ex.go
+
+.play concurrency/attente_ex.go

@@ -1,0 +1,342 @@
+# Plus de types : structs, slices, et maps.
+
+## Structures
+
+Une `struct` est une collection de champs et méthodes (voir plus loin).
+
+.play moretypes/structs.go
+
+## Champs struct
+
+les champs de la structure sont accessibles à l'aide d'un point.
+
+.play moretypes/struct-fields.go
+
+## Les pointeurs vers des structs
+
+Les champs struct peuvent et sont généralement accessibles via un pointeur de struct.
+
+Pour accéder au champ `X` d'une structure lorsque nous avons le pointeur de structure `p` nous pouvons
+écrire `(*p).X`.
+Cependant, cette notation est verbeuse, donc le langage nous permet à la place
+d'écrire juste `p.X`, sans la déréférence explicite.
+
+> Lors du passage d'un struct en paramètre d'une fonction, s'il n'est pas passé par pointeur
+tout son contenu est copié.
+
+.play moretypes/struct-pointers.go
+.play moretypes/struct_pointers_ex.go
+
+_Exercice : Prendre un struct en paramètre d'une fonction, avec ou sans pointeur, en modifiant 
+ses champs comme précédement._
+
+## Struct littéraux
+
+Une structure littérale dénote une valeur de structure nouvellement allouée en énumérant les valeurs de ses champs.
+
+Vous pouvez lister seulement un sous-ensemble de champs en utilisant la syntaxe `Nom:`. (Et l'ordre des champs nommés n'est pas pertinent.)
+
+Le préfixe spécial `&` construit un pointeur vers la valeur struct.
+
+.play moretypes/struct-literals.go
+
+_Exercice : voir ce qui se passe si on affecte un champ à un struct non initialisé_
+
+
+## Tableaux (Arrays)
+
+Le type `[n]T` est un tableau de taille `n` ayant des valeurs de type `T`.
+
+L'expression
+
+	var a [10]int
+
+déclare une variable `a` comme un tableau de dix entiers.
+
+La longueur d'un tableau fait partie de son type, de sorte que les tableaux ne peuvent pas être redimensionnés.
+Cela semble limitatif, mais ne vous inquiétez pas ;
+Go offre un moyen pratique de travailler avec des tableaux.
+
+.play moretypes/array.go
+
+## Slices
+
+Un tableau a une taille fixe.
+Un slice, en revanche, est de taille dynamique,
+une vue flexible dans les éléments d'un tableau.
+En pratique, les slices sont beaucoup plus courantes que les tableaux.
+
+Le type `[]T` est un slice avec des éléments de type `T`.
+
+Un slice est formée en spécifiant deux indices, une limite basse et
+une limite haute, séparés par deux-points:
+
+	a[low : high]
+
+Cela sélectionne une plage semi-ouverte qui inclut le premier
+élément, mais exclut le dernier.
+
+L'expression suivante crée un slice qui comprend
+les éléments 1 à 3 de `a`:
+
+	a[1:4]
+
+.play moretypes/slices.go
+
+## Les slices sont comme des références à des tableaux
+
+Un slice ne stocke aucune donnée,
+il décrit simplement une section d'un tableau sous-jacent.
+
+La modification des éléments d'un slice modifie les
+éléments correspondants de son tableau sous-jacent.
+
+Les autres slices qui partagent le même tableau sous-jacent verront ces modifications.
+
+.play moretypes/slices-pointers.go
+
+**Depuis Go1.17**
+
+> Conversions from slice to array pointer: An expression s of type []T may now be converted to array pointer type *[N]T. If a is the result of such a conversion, then corresponding indices that are in range refer to the same underlying elements: &a[i] == &s[i] for 0 <= i < N. The conversion panics if len(s) is less than N.
+
+## slices littéraux
+
+Un littéral de slice est comme un littéral de tableau sans la longueur.
+
+Il s'agit d'un littéral de tableau:
+
+	[3]bool{true, true, false}
+
+Et cela crée le même tableau que ci-dessus,
+puis crée un slice qui y fait référence:
+
+	[]bool{true, true, false}
+
+.play moretypes/slice-literals.go
+
+## Valeurs par défaut des slices
+
+Lors du découpage, vous pouvez omettre les limites hautes ou basses pour utiliser leurs valeurs par défaut à la place.
+
+La valeur par défaut est zéro pour la limite inférieure et la longueur de la slice pour la limite supérieure.
+
+Pour le tableau
+
+	var a [10]int
+
+ces expressions de slice sont équivalentes:
+
+	a[0:10]
+	a[:10]
+	a[0:]
+	a[:]
+
+.play moretypes/slice-bounds.go
+
+## Longueur et capacité des slices
+
+Un slice a à la fois une _longueur_ et une _capacité_.
+
+La longueur d'un slice est le nombre d'éléments qu'elle contient.
+
+La capacité d'un slice est le nombre d'éléments dans le tableau sous-jacent,
+en comptant à partir du premier élément de la slice.
+
+La longueur et la capacité d'un slice `s` peuvent être obtenues en utilisant les expressions
+`len(s)` et `cap(s)`.
+
+Vous pouvez étendre la longueur d'un slice en la coupant à nouveau,
+à condition qu'il ait une capacité suffisante.
+Essayez de modifier l'une des opérations de slice dans l'exemple de programme pour l'étendre
+au-delà de sa capacité et voir ce qui se passe.
+
+.play moretypes/slice-len-cap.go
+
+## slices nulles
+
+La valeur nulle d'un slice est `nil`.
+
+Un slice nulle possède une longueur et une capacité de zéro
+et n'a pas de tableau sous-jacent.
+
+.play moretypes/nil-slices.go
+
+## Création d'un slice avec make
+
+Les slices peuvent être créées avec la fonction intégrée `make`;
+c'est ainsi que vous créez des tableaux de taille dynamique.
+
+La fonction `make` alloue un tableau mis à zéro
+et renvoie un slice qui fait référence à ce tableau:
+
+	a := make([]int, 5)  // len(a)=5
+
+Pour spécifier une capacité, passer un troisième argument à `make` :
+
+	b := make([]int, 0, 5) // len(b)=0, cap(b)=5
+
+	b = b[:cap(b)] // len(b)=5, cap(b)=5
+	b = b[1:]      // len(b)=4, cap(b)=4
+
+.play moretypes/making-slices.go
+
+## slices de slices
+
+Les slices peuvent contenir tout type, y compris d'autres slices.
+
+.play moretypes/slices-of-slice.go
+
+## Ajouter à un slice
+
+Il est courant d'ajouter de nouveaux éléments à un slice, et ainsi Go offre une fonction intégrée
+`append`. La [documentation](https://golang.org/pkg/builtin/#append)
+du package intégré décrit `append`.
+
+	func append(s []T, vs ...T) []T
+
+Le premier paramètre `s` de `append` est un slice de type `T`, et le reste sont des
+valeurs `T` à ajouter à la slice.
+
+La valeur résultante de `append` est un slice contenant tous les éléments de la slice original
+et les valeurs fournis.
+
+Si le tableau de support de `s` est trop petit pour contenir toutes les valeurs données un 
+**nouveau** tableau plus gros sera alloué. La slice retourné pointera vers le tableau nouvellement
+allouée.
+
+(Pour en apprendre plus sur les slices, lire l'article [slices : utilisation et fonctionnement interne](https://blog.golang.org/go-slices-usage-and-internals).)
+
+.play moretypes/append.go
+.play moretypes/slice-aug.go
+.play moretypes/slice_aug_ex.go
+
+_Exercice : trouvez les critères d'augmentation automatique des slices en fonction de l'augmentation de capacité_
+
+
+## Range
+
+La forme `range` de la boucle `for` effectue une itération sur un slice ou un map.
+
+Lors de l'itération sur un slice, deux valeurs sont renvoyées pour chaque itération.
+Le premier est l'indice, et la seconde est une copie de l'élément à cet indice.
+
+.play moretypes/range.go
+
+## Range suite
+
+Vous pouvez sauter l'indice ou la valeur en l'attribuant à `_`.
+
+	for i, _ := range pow
+	for _, value := range pow
+
+Si vous ne voulez que l'index, vous pouvez omettre la deuxième variable.
+
+	for i := range pow
+
+.play moretypes/range-continued.go
+
+
+## Copier un slice
+
+Pour copier un slice il existe la fonction `copy(dst, src []Type) int`
+
+La destination contiendra une copie des élements de la source jusqu'à la longueur minimale des deux.
+La fonction renvoi le nombre d'éléments copiés.
+
+.play moretypes/copy.go
+
+## Trier un slice
+
+Le package `sort` contient une fonction qui permet de trier un slice indépendament de son type.
+
+Le package `rand` contient une fonction qui permet de mélanger un slice.
+
+Cela permet de se passer de generic.
+
+.play moretypes/sort.go
+.play moretypes/sort_ex.go
+
+## Maps
+
+Un map associe clés et valeurs.
+
+La valeur zéro d'un map est `nil`.
+Un map `nil` n'a pas de clés, et aucune clé ne peut être ajoutée.
+
+La fonction `make` retourne un map du type donné,
+initialisé et prêt à l'emploi.
+
+.play moretypes/maps.go
+
+## Map littéral (Map literals)
+
+map littéraux sont comme des littéraux de struct, mais les clés sont nécessaires.
+
+.play moretypes/map-literals.go
+
+## Map littéral suite
+
+Si le type de haut-niveau est juste un nom de type, vous pouvez l'omettre des éléments du littéral.
+
+Il est également possible d'utiliser des structs anonymes.
+
+.play moretypes/map-literals-continued.go
+
+## Mutation de maps (Mutating Maps)
+
+Insérer ou mettre à jour un élément de map `m` :
+
+	m[key] = elem
+
+Récupérer un élément :
+
+	elem = m[key]
+
+> Aucune erreur si l'élément n'existe pas, il faut tester le retour. Cela permet `m["nexistepas"]++`
+
+Supprimer un élément :
+
+	delete(m, key)
+
+Test qu'une clé est présente avec une affectation de deux valeurs :
+
+	elem, ok = m[key]
+
+Si `key` est dans `m , ok` est `true`. Sinon, `ok` est `false`
+
+Si `key` n'est pas dans la map, alors `elem` est la valeur zéro pour le type d'élément de la map.
+
+**Note :** si `elem` ou `ok` n'ont pas encore été déclarée, vous pouvez utiliser une déclaration courte :
+
+	elem, ok := m[key]
+
+.play moretypes/mutating-maps.go
+
+## Exercice : maps
+
+Mettre en œuvre WordCount. Elle doit retourner un map des comptes de chaque «mot» dans la chaîne s. La fonction Test exécute une série de tests contre la fonction fournie et imprime le succès ou l'échec.
+
+Vous trouverez peut-être strings.Fields utile.
+
+> Voir les différentes manières de comparer un map
+
+.play moretypes/exercise-maps.go
+
+## Les valeurs de fonction
+
+Les fonctions sont aussi des valeurs. Elles peuvent être passés comme toutes autres valeurs.
+
+Les valeurs de fonction peuvent être utilisées comme arguments de fonction et des valeurs de retour.
+
+.play moretypes/function-values.go
+
+> Déjà vu avec sort
+
+## Fermetures de fonction (Closures)
+
+Les fonctions de Go peuvent être des fermetures. Une fermeture  est une valeur de la fonction qui fait référence à des variables à partir de l'extérieur de son corps. La fonction peut accéder et assigner aux variables référencées, dans ce sens, la fonction est «lié» aux variables.
+
+Par exemple, la fonction de `adder` renvoie une fermeture. Chaque fermeture est liée à sa propre variable `sum`.
+
+.play moretypes/function-closures.go
+

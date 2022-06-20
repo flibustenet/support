@@ -1,0 +1,20 @@
+# Generics
+
+## Types parameters
+
+Depuis Go 1.18 les fonctions peuvent fonctionner avec plusieurs types à l'aide
+des "types parameters".  Pour cela les types de paramètres sont indiqués entre
+crochets `[ ]`
+
+```
+func Index[T comparable](s []T, x T) int
+```
+
+This declaration means that s is a slice of any type T that fulfills the built-in constraint comparable. x is also a value of the same type.
+
+Cette déclaration signifie que `s` est un slice de type T qui correspond à la contrainte prédéfinie "comparable". `x` est aussi une valeur du même type.
+
+`comparable` est une contraite qui permet l'utilisation des opérateurs `==` et `!=` sur les valeurs de ce type à l'intérieur de la fonction.
+
+.play generics/index.go
+.play generics/sum.go

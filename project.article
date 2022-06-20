@@ -1,0 +1,107 @@
+# Démarrage d'un projet
+
+## Initialisation d'un module
+
+Un module regroupe un ou plusieurs packages. Une application.
+Le nom du module correspond à l'url sur lequel on peut le télécharger
+à l'aide de la commande `go get`.
+
+> Le nom du module sera utilisé aussi bien pour son url que pour l'importer
+> dans son code source.
+
+- `go mod init test.monmodule`
+- `go mod init github.com/me/monapp`
+- `go mod init github.com/me/malib`
+- `go mod init mydomain.com/malib`
+
+`go mod init` crée un fichier `go.mod`
+
+```
+module test.monmodule
+
+go 1.18
+```
+
+> Les versions antérieures à `Go 1.13` n'utilisaient pas le système des modules.
+> Le code devait se trouver dans `$GOPATH/src`.
+> Ce n'est plus le cas à présent.
+
+Créez un dossier puis initialisez le module. Vérifiez la présence de `go.mod`
+
+## Packages
+
+- Code structuré sous forme de packages
+  - packages locaux (sous répertoires du projet)
+
+- Importation de packages
+  - packages lib standard
+  - packages externes (sous forme de modules étudiés plus loin)
+
+```go
+package main // nom du package en cours
+
+import (
+  "fmt"      // importation package standard pour formater de type Printf
+  "net/http" // package standard pour la couche http
+  "github.com/russross/blackfriday/v2" // importation lib externe en v2
+)
+```
+
+Les packages doivent être importés pour être utilisés. Ils peuvent être précédés d'un alias. `import alias "example.com/monpackage"`
+
+> Un package importé doit impérativement être utilisé sous peine d'engendrer une erreur
+  de compilation.
+> Il est possible d'utiliser `_` pour forcer l'importation d'un package sans l'utiliser
+  explicitement.  `import _ "github/lib/pq"`
+
+- La fonction `init()` d'un package est automatiquement lancée au premier import du package.
+- Les dépendances circulaires sont interdites.
+
+## Visibilité des identifiants
+
+Les identifiants (variables et fonctions) sont propres à un package, ils ne sont exportés
+que s'ils commencent par une majuscule.
+
+```go
+package monpackage
+
+var loc string // variable accessible uniquement dans ce package
+
+// mafonction est visible uniquement dans ce package
+func mafonction() {
+}
+
+var Ext string // variable visible à l'extérieur du package `monpackage.Ext`
+
+// External est visible à l'extérieur du package `monpackage.External()`
+func External() {
+}
+
+```
+
+En Go, un identifiant est exporté s'il commence par une majuscule.
+Par exemple, `Pizza` est un identifiant exporté, tout comme `Pi`, qui est exporté
+du package `math`.
+
+`pizza` et `pi` ne commencent pas par une majuscule, ils ne sont donc pas exportés.
+
+Lors de l'importation d'un package, vous pouvez seulement faire référence à ses identifiants exportés.
+Tous les identifiants «non exportées» sont inaccessibles depuis l'extérieur du package.
+
+Exécutez le code. Remarquez le message d'erreur.
+
+Pour corriger l'erreur, renommez `math.pi` en `math.Pi` et essayez à nouveau.
+
+.play basics/exported-names.go
+
+> Convention : CamelCase / camelCase 
+
+
+.play basics/packages.go
+
+*Exercice : créez un module et mettre la fonction Majuscule dans un package*
+
+*Exercice : adaptez un serveur 2 pages avec les handlers dans un package séparé*
+
+.play welcome/hello2_ex.go
+

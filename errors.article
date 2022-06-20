@@ -1,0 +1,69 @@
+# Gestion des erreurs
+
+## Principe de base
+
+Deux types d'erreurs
+
+- Erreurs prévisibles "value" (file not found, 404...)
+  - Retournée par la fonction, de type error (interface `Error() string`)
+- Erreurs imprévisibles "panic" (nil pointer, index out of range...)
+  - Rattrapée par `recover`
+
+.play errors/types.go
+
+Les erreurs retournées par une fonction sont soit :
+
+- Gérées immédiatement
+
+Un fichier n'existe pas `os.ErrNotFound`, on le crée tout de suite.
+Une requête sql ne renvoi aucune valeur `sql.ErrNoRows` on accepte l'absence de valeur.
+etc.
+
+- Annotées puis renvoyées à la fonction précédente.
+
+Sans conservation de l'erreur originale :
+`return fmt.Errorf("Erreur sur l'appel xyz : %v", err)`
+
+Avec conservation de l'erreur originale :
+`return fmt.Errorf("Erreur sur l'appel xyz : %w", err)`
+
+- Renvoyée telle quelle :
+`return err`
+
+## Custom, Is, As et Wrapping
+
+### Créer ses propres erreurs
+
+Il est possible de créer ses propres types d'erreurs, elle doivent respecter l'interface `Error() string`
+
+.play errors/custom.go
+.play errors/custom_perso.go
+
+### Gérer une cascade d'erreurs
+
+Lorsque les erreurs sont renvoyées en cascade il est possible de retrouver une erreur dans la chaine.
+
+- `errors.Is` Est-ce qu'une erreur de ce type est présente dans la chaine ?
+
+- `errors.As` Est-ce que je peux affecter ma variable avec un type d'erreur se trouvant dans la chaine ?
+
+Il est également possible d'implémenter ses propres méthodes `Is` et `As` sur son type d'erreur personalisé.
+
+.play errors/cascade.go
+.play errors/cascade_perso.go
+
+## Panic et recover
+
+`recover()` permet de rattraper des erreurs de type panic.
+
+.play errors/panic.go
+
+## Liens
+
+- [Blog Go Team Errors are values](https://blog.golang.org/errors-are-values)
+- [Exemple custom](https://commandcenter.blogspot.com/2017/12/error-handling-in-upspin.html)
+- [Blog Go Team defer / panic / recover](https://blog.golang.org/defer-panic-and-recover)
+- [Blog Go Team Wrap Is As](https://blog.golang.org/go1.13-errors)
+- |Blog Go Team Error handling] https://go.dev/blog/error-handling-and-go
+
+

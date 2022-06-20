@@ -1,0 +1,260 @@
+# Variables et fonctions.
+
+
+## Variables
+
+L'instruction `var` déclare une liste de variables, comme dans les listes d'arguments de fonction, le type est en dernier.
+
+Une instruction `var` peut être au niveau du package ou au niveau de la fonction. On voit les deux dans cet exemple.
+
+.play basics/variables.go
+
+Une variable déclarée dans une fonction doit impérativement être utilisée sous peine d'engendrer une erreur
+de compilation.
+
+> La variable `_` peut servir de réception non utilisée.
+
+```
+  a := 5
+  _ = a // évite d'engendrer une erreur si a n'est pas utilisé par ailleurs
+```
+
+## Les variables avec initialisation
+
+Une déclaration var peut inclure des initialisations, une par variable.
+
+Si une initialisation est présente, le type peut être omis ; la variable prendra le type de l'initialisation.
+
+.play basics/variables-with-initializers.go
+
+## Déclaration de variable courte
+
+A l'intérieur d'une fonction, l'instruction `:=` d'affectation  courte peut être utilisée à la place d'une déclaration `var` de type implicite.
+
+(En dehors d'une fonction, chaque instruction commence avec un mot-clé (`var`, `func`, et ainsi de suite) et la construction `:=` n'est pas disponible)
+
+.play basics/short-variable-declarations.go
+
+## Les types de base
+
+Les types de base de Go sont
+
+	bool
+
+	string
+
+	int  int8  int16  int32  int64
+	uint uint8 uint16 uint32 uint64 uintptr
+
+	byte // alias pour uint8
+
+	rune // alias pour int32
+	     // représente un "code point" Unicode
+
+	float32 float64
+
+	complex64 complex128
+
+L'exemple montre des variables de plusieurs types,
+et aussi que les variables de déclarations peuvent être « factorisé », en blocs,
+comme les déclarations d'importation.
+
+Les types `int`, `uint` et `uintptr` sont généralement d'une largeur de 32 bits sur les systèmes 32 bits et 64 bits de large sur les systèmes 64 bits.
+Lorsque vous avez besoin d'une valeur entière vous devez utiliser `int` sauf si vous avez une raison particulière d'utiliser un type entier de taille définie ou non signé.
+
+.play basics/basic-types.go
+
+## Les valeurs zéro
+
+Les variables déclarées sans valeur initiale explicite reçoivent leur
+_valeur zéro_.
+
+La valeur zéro est :
+
+  - `0` pour les types numériques,
+  - `false` pour les types booléens, et
+  - `""` (La chaîne vide) pour les chaînes.
+
+.play basics/zero.go
+
+## Les conversions de type
+
+L'expression `T(v)` convertit la valeur `v` au type `T`.
+
+Quelques conversions numériques :
+
+	var i int = 42
+	var f float64 = float64(i)
+	var u uint = uint(f)
+
+Ou, plus simplement :
+
+	i := 42
+	f := float64(i)
+	u := uint(f)
+
+Essayez de retirer le `float64` ou `uint` des conversions dans l'exemple pour voir ce qui se passe.
+
+.play basics/type-conversions.go
+
+> Pour convertir des chaines en numérique ou l'inverse : package [strconv](https://golang.org/pkg/strconv/)
+
+## L'inférence de type
+
+Lors de la déclaration d'une variable sans préciser un type explicite (soit en utilisant la syntaxe `:=` ou `var =`), le type de la variable est déduit de la valeur sur le côté droit.
+
+Lorsque le côté droit de la déclaration est typé, la nouvelle variable est de ce même type :
+
+	var i int
+	j := i // j est un entier
+
+Mais quand le côté droit contient une constante numérique non typée, la nouvelle variable peut être un `int , float64`, ou `complex128` en fonction de la précision de la constante :
+
+	i := 42           // int
+	f := 3.142        // float64
+	g := 0.867 + 0.5i // complex128
+
+Essayez de changer la valeur initiale de `v` dans l'exemple de code et d'observer comment ce type est affecté.
+
+.play basics/type-inference.go
+
+
+## Manipulation des types numériques
+
+*Exercice : Créer une fonction qui prend deux chaines de caractères "42" et "5". Convertir et afficher
+  la somme des ces deux nombres.*
+
+.play basics/manip_num.go
+
+## Constantes
+
+Les constantes sont déclarées comme des variables, mais avec le mot-clé `const`.
+
+Les constantes peuvent être un caractère, une chaîne, un booléen, ou des valeurs numériques.
+
+Les constantes ne peuvent pas être déclarées en utilisant la syntaxe `:=` .
+
+.play basics/constants.go
+
+## Constantes numériques
+
+Les constantes numériques sont des _valeurs_ de haute précision.
+
+**Une constante non typée prend le type requis par son contexte.**
+
+- Essayez d'imprimer `Big`.
+
+- Essayez aussi d'imprimer `needInt(Big)`.
+
+(Un `int` peut stocker au maximum un entier de 64 bits et parfois moins.)
+
+.play basics/numeric-constants.go
+
+## Les chaînes unicode
+
+Une chaine de caractère est encodée en utf-8.
+Certains caractères prennent donc 2 octets.
+
+Essayez de mettre un tréma sur le i
+
+.play basics/strings.go
+
+## Portée des variables
+
+- Une variable est accessible au sein du bloc inférieur.
+- Un bloc vide peut exister sans instruction.
+- Une variable initialisée dans un bloc n'est pas accessible au bloc supérieur.
+- Une variable initialisée dans un bloc masque une variable globale du même nom. (variable shadowing)
+
+> Nous avons vu avec la notion de package qu'une variable globale d'un package est accessible 
+  à l'extérieur du package si elle commence par une majuscule
+
+.play basics/var-shadow.go
+
+> Les variables globales sont à éviter (tests et *race condition*).
+
+## Pointeurs
+
+Go comporte des pointeurs.
+Un pointeur contient l'adresse mémoire d'une valeur.
+
+Le type `*T` est un pointeur vers une valeur de `T`. Sa valeur zéro est `nil`.
+
+	var p *int
+
+L'opérateur `&` génère un pointeur vers son opérande.
+
+	i := 42
+	p = &i
+
+L'opérateur `*` dénote la valeur sous-jacente du pointeur.
+
+	fmt.Println(*p) // lire i par le pointeur p
+	*p = 21         // définir i par le pointeur p
+
+Ceci est connu en tant que « déréférencement » ou « indirection ».
+
+Contrairement à C, Go n'a aucune arithmétique de pointeur.
+
+.play moretypes/pointers.go
+
+## Fonctions
+
+Une fonction peut prendre zéro ou plusieurs arguments.
+
+Dans cet exemple, `add` prend deux paramètres de type `int`.
+
+Notez que le type vient _après_ l'identifiant de la variable.
+
+.play basics/functions.go
+
+Lorsque deux ou plusieurs paramètres de fonction nommée consécutifs partagent un type, vous pouvez omettre le type de tous sauf le dernier.
+
+Dans cet exemple, nous avons réduit
+
+	x int, y int
+
+en
+
+	x, y int
+
+.play basics/functions-continued.go
+
+Il est également possible d'avoir un nombre de paramètres variables,
+dans ce cas un slice du type sera reçu.
+
+    xs ...int
+
+A l'inverse on pour passer d'un slice vers des paramètres variables
+
+    func call(xs ...int)
+
+    monSlice := []int{1, 2, 3}
+    call(monSlice...)
+
+.play basics/functions-var.go
+.play basics/functions-var-conv_ex.go
+
+## Plusieurs résultats
+
+Une fonction peut retourner plusieurs résultats.
+
+Cette fonction `swap` retourne deux chaînes.
+
+.play basics/multiple-results.go
+
+## Résultats nommés
+
+Les valeurs de retour de Go peuvent être nommées. Si c'est le cas, elles sont traitées comme des variables définies dans le haut de la fonction.
+
+Ces noms peuvent être utilisés pour documenter la signification des valeurs de retour.
+
+Une déclaration `return` sans arguments renvoie les valeurs de retour nommées. C'est ce qu'on appelle un retour  « nu ».
+
+Des déclarations de retour nus doivent être utilisées uniquement dans des fonctions courtes, comme avec l'exemple montré ici. Ils peuvent nuire à la lisibilité de fonctions plus grandes.
+
+.play basics/named-results.go
+
+## Récap variables et fonctions
+
+.play basics/basics-recap.go

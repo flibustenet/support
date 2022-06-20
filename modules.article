@@ -1,0 +1,101 @@
+# Modules
+
+## Historique
+
+Avant la gestion des modules les applications et bibliothèques devaient se
+trouver dans le répertoire `$GOPATH` habituellement situé dans `$home/go`.
+
+Ne pas tenir compte des nombreuses docs mentionnant `$GOPATH`
+
+Depuis la mise en place des modules les applications et bibliothèques se
+trouvent dans leur propre répertoire. Le répertoire doit contenir un
+fichier `go.mod` décrivant le nom du module. Il est créé automatiquement
+par l'instruction `go mod init nom_du_module`
+
+```
+module github.com/user/appli
+
+go 1.15
+```
+
+## Modules : les dépendances
+
+Pour ajouter une dépendance il suffit d'utiliser la commande
+
+`go get github.com/jmoiron/sqlx`
+
+Le fichier `go.mod` va contenir
+
+```
+module github.com/user/appli
+
+go 1.15
+
+require github.com/jmoiron/sqlx v1.2.0
+```
+
+Le fichier `go.mod` est mis à jour automatiquement par les commandes
+`go mod _commande_`.
+
+`go mod tidy` permet de synchroniser le fichier `go.mod` avec le code,
+les dépendances inutiles seront supprimées, les dépendances manquantes
+seront installées.
+
+`go build`, `go run` et `go install` ne vont plus télécharger automatiquement
+les éventuelles dépendances manquantes (depuis Go 1.16).
+Il faut installer les dépendance soit avec `go get` soit `go mod tidy`.
+
+Il n'y a pas de contraintes de versions autres que la version minimale.
+Cela permet d'éviter d'avoir un lock file, chaque installation utilisera donc
+exactement les mêmes versions que l'auteur du fichier `go.mod`.
+
+Le fichier `go.sum` n'est pas un lock file, il est là pour contrôler le checksum
+des modules. 
+
+Lorsque deux dépendances utilisent une dépendance commune c'est la version
+minimale requise qui sera utilisée.
+
+Si la dépendance A requiert C v1.2.0 et B requiert C v1.3.0, si on installe
+A C v1.2.0 sera installé, si on ajoute B C v1.3.0 sera installé.
+
+Les versions mineures doivent toujours être compatibles ascendantes
+
+Les modules sont téléchargés à travers `proxy.golang.org` par défaut, sauf
+`GOPRIVATE`.
+
+
+## Versions majeures
+
+Lors d'un changement majeur, indispensable lorsque la compatibilité
+ascendante n'est plus possible, le module doit changer de nom en 
+indiquant la version majeur en fin de nom.
+
+Le changement de nom se fait automatiquement lors d'un tag du 
+gestionnaire de version.
+
+Exemple `github.com/russross/blackfriday/v2`
+
+Dans ce cas le fichier `go.mod` va contenir
+
+`module github.com/russross/blackfriday/v2`
+
+Pour récupérer cette version :
+
+`go get github.com/russross/blackfriday/v2`
+
+Pour utiliser cette version dans le code
+
+```
+import github.com/russross/blackfriday/v2
+
+func main() {
+    output := blackfriday.Run(input)
+}
+```
+
+Ainsi il est possible d'utiliser plusieurs versions majeures d'un même
+module dans la même application. 
+
+
+
+
